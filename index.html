@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinguaStream — Transkrip & Penerjemah Video Belajar</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- Header Navigasi -->
+  <header class="navbar">
+    <div class="brand">
+      <span class="logo-icon">🎙️</span>
+      <div>
+        <h1>LinguaStream</h1>
+        <p class="subtitle">Ubah Video Asing Jadi Catatan Belajar Interaktif</p>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <span id="api-status-badge" class="badge badge-warning">API Belum Diatur</span>
+      <button id="btn-open-settings" class="btn btn-secondary">⚙️ Pengaturan API</button>
+    </div>
+  </header>
+
+  <!-- Kontainer Utama Bento Grid -->
+  <main class="container">
+    <!-- PANEL KIRI: Input & Pemutar Media -->
+    <section class="panel panel-left">
+      <div class="card">
+        <h2>1. Sumber Video / Audio</h2>
+        
+        <!-- Tab Pilihan Input -->
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="tab-file">📁 Upload File (MP4/MP3)</button>
+          <button class="tab-btn" data-tab="tab-youtube">▶️ Pratinjau YouTube</button>
+        </div>
+
+        <!-- Tab 1: Upload File -->
+        <div id="tab-file" class="tab-content active">
+          <div id="drop-zone" class="drop-zone">
+            <p><strong>Seret & lepas file video/audio di sini</strong></p>
+            <p class="hint">atau klik untuk memilih file (MP3, MP4, WAV, M4A — Maks. 25 MB)</p>
+            <input type="file" id="media-file-input" accept="audio/*,video/*" hidden />
+          </div>
+          <p id="selected-file-name" class="file-info hidden"></p>
+        </div>
+
+        <!-- Tab 2: Embed YouTube -->
+        <div id="tab-youtube" class="tab-content">
+          <div class="input-group">
+            <input type="text" id="youtube-url-input" placeholder="Tempel link YouTube di sini..." />
+            <button id="btn-load-yt" class="btn btn-primary">Muat</button>
+          </div>
+          <p class="hint" style="margin-top: 8px;">
+            *Catatan: Karena keamanan browser (CORS), gunakan pemutar ini untuk menyimak video sambil mengunggah file audio/videonya di tab sebelah untuk transkripsi otomatis.
+          </p>
+        </div>
+
+        <!-- Pemutar Media Terpadu -->
+        <div id="player-wrapper" class="player-wrapper hidden">
+          <video id="local-media-player" controls class="media-element hidden"></video>
+          <div id="yt-player-container" class="yt-frame hidden"></div>
+        </div>
+      </div>
+
+      <!-- Kontrol AI -->
+      <div class="card">
+        <h2>2. Pengaturan Bahasa & AI</h2>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="source-lang">Bahasa Asli Video</label>
+            <select id="source-lang">
+              <option value="auto">Deteksi Otomatis (Semua Bahasa)</option>
+              <option value="en">Inggris (English)</option>
+              <option value="ja">Jepang (日本語)</option>
+              <option value="de">Jerman (Deutsch)</option>
+              <option value="ko">Korea (한국어)</option>
+              <option value="zh">Mandarin (中文)</option>
+              <option value="ar">Arab (العربية)</option>
+              <option value="fr">Prancis (Français)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="target-lang">Terjemahkan Ke</label>
+            <select id="target-lang">
+              <option value="Indonesian" selected>Bahasa Indonesia</option>
+              <option value="English">Bahasa Inggris (English)</option>
+              <option value="Japanese">Bahasa Jepang</option>
+              <option value="German">Bahasa Jerman</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button id="btn-transcribe" class="btn btn-primary full-width" disabled>
+            ✨ Mulai Transkripsi & Terjemahkan
+          </button>
+        </div>
+
+        <!-- Indikator Status Proses -->
+        <div id="status-box" class="status-box hidden">
+          <div class="spinner"></div>
+          <span id="status-text">Memproses audio...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL KANAN: Hasil Transkrip & Catatan Belajar -->
+    <section class="panel panel-right">
+      <div class="card transcript-card">
+        <div class="transcript-header">
+          <h2>3. Transkrip & Terjemahan Interaktif</h2>
+          <div class="transcript-tools">
+            <input type="text" id="search-transcript" placeholder="🔍 Cari kata..." />
+            <button id="btn-export-md" class="btn btn-secondary" disabled>📥 Unduh Catatan (.md)</button>
+          </div>
+        </div>
+
+        <!-- Mode Tampilan -->
+        <div class="view-modes">
+          <button class="mode-btn active" data-mode="bilingual">Berdampingan (Bilinggual)</button>
+          <button class="mode-btn" data-mode="translated">Terjemahan Saja</button>
+          <button class="mode-btn" data-mode="original">Bahasa Asli Saja</button>
+          <button class="mode-btn" data-mode="summary">💡 Ringkasan Materi</button>
+        </div>
+
+        <!-- Area Konten Utama -->
+        <div id="transcript-container" class="transcript-list">
+          <div class="empty-state">
+            <p>Belum ada transkrip.</p>
+            <span>Unggah file audio/video di panel kiri, lalu klik tombol Transkripsi untuk memulai.</span>
+          </div>
+        </div>
+
+        <!-- Area Ringkasan AI (Tersembunyi secara default) -->
+        <div id="summary-container" class="summary-box hidden"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Pengaturan API Key -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>⚙️ Konfigurasi API Key (Gratis)</h3>
+        <button id="btn-close-settings" class="close-btn">&times;</button>
+      </div>
+      <p class="hint">
+        Kunci API disimpan <strong>100% lokal di browser Anda</strong> (localStorage) dan tidak pernah dikirim ke server lain.
+      </p>
+      
+      <div class="form-group">
+        <label for="input-groq-key">Groq API Key (Untuk Transkripsi Whisper)</label>
+        <input type="password" id="input-groq-key" placeholder="gsk_..." />
+        <small>Dapatkan gratis di <a href="https://console.groq.com/keys" target="_blank">console.groq.com</a></small>
+      </div>
+
+      <div class="form-group">
+        <label for="input-gemini-key">Google Gemini API Key (Untuk Terjemahan & Ringkasan)</label>
+        <input type="password" id="input-gemini-key" placeholder="AIzaSy..." />
+        <small>Dapatkan gratis di <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a></small>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btn-clear-keys" class="btn btn-danger">Hapus Kunci</button>
+        <button id="btn-save-keys" class="btn btn-primary">Simpan Pengaturan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Memuat Modul JavaScript (ES6 Modules) -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
